@@ -31,7 +31,6 @@ let IsPlayingPlayList = 0;
 
 client.on("ready", () => {
   console.log(`${client.user.tag } is now online and ready to use`);  
-  //console.log(client.voice.channel.id);
 });
 
 client.login(process.env.BOT_TOKEN);
