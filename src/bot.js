@@ -350,8 +350,6 @@ client.on("message", async (message) =>{
           break;
         }
         let seekTime = Number(args[0]);
-        // console.log("DURANTION CURRENT: "+ distube.getQueue(message).songs[0].duration);
-        // console.log("SEEK: " + seekTime);
         if(seekTime < distube.getQueue(message).songs[0].duration && seekTime >= 0){
           distube.seek(message, seekTime*1000);
         }
