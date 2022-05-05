@@ -23,6 +23,6 @@
     "node-fetch": "^2.6.7",
     "nodejs": "0.0.0",
     "spotify-url-info": "^2.2.3",
-    "ytdl-core": "^4.10.0"
+    "ytdl-core": "^4.11.0"
   }
 }
