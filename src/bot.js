@@ -120,7 +120,6 @@ client.on("message", async (message) =>{
         else if(args.join(" ").toLowerCase().includes("spotify") && args.join(" ").toLowerCase().includes("playlist")){
           let number_list;
             getTracks(args.join(" ")).then(result=> {
-              //console.log(result);
               IsPlayingPlayList = result.length;
               for (const song of result){
                 getPreview(song.external_urls.spotify).then(result1=>{
