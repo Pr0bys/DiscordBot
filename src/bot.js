@@ -19,11 +19,11 @@ const client = new Discord.Client({
   }
 });
 
-const Distube = new require("distube");
+const Distube = require("distube");
 
 const { getPreview, getTracks } = require("spotify-url-info")
 
-//const { SpotifyPlugin } = require("@distube/spotify");
+// const SpotifyPlugin = require("distube/spotify");
 
 const distube = new Distube(client);
 
@@ -58,9 +58,19 @@ function check_channel(message){
     return true;
   }
 }
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 client.on("message", async (message) =>{
   if(!message.guild) return;
-  if(message.author.bot) return;
+  // if(message.author.bot) return;
+
+  const {member, mentions} = message;
+
+  const tag = `<@${member.id}>`;
+
   const args = message.content.slice(prefix.length).split(" ");
   console.log("ARGS:"+args);
   const command = args.shift();
@@ -81,6 +91,26 @@ client.on("message", async (message) =>{
         // distube.search("Childhood dream").then(result => console.log(result));
         message.channel.send("SHOVEL");
         console.log(distube.options);
+        break;
+      }
+
+      case "u": {
+        let songsList = ['https://www.youtube.com/watch?v=dkpgz3uQ58U', 'https://www.youtube.com/watch?v=0F5YSRWe7FI'];
+        distube.playCustomPlaylist(message, songsList);
+        break;
+      }
+
+      case "c":{
+        const songs = ['https://www.youtube.com/watch?v=dkpgz3uQ58U', 'https://www.youtube.com/watch?v=0F5YSRWe7FI'];
+        const playlist = await distube.createCustomPlaylist(songs);
+        distube.play(message, playlist);
+        break;
+      }
+
+      case "sea":{
+        let searchResults = await distube.search(args.join(" "));
+        console.log(searchResults[0]);
+        // distube.play(message, args.join(" "));
         break;
       }
 
@@ -118,21 +148,19 @@ client.on("message", async (message) =>{
           });
         }
         else if(args.join(" ").toLowerCase().includes("spotify") && args.join(" ").toLowerCase().includes("playlist")){
-          let number_list;
-            getTracks(args.join(" ")).then(result=> {
-              IsPlayingPlayList = result.length;
-              for (const song of result){
-                getPreview(song.external_urls.spotify).then(result1=>{
-                  distube.play(message, result1.title+" "+result1.artist);
-                  console.log(result1.title+" "+result1.artist);
-                });
-              }
-              message.channel.send(new MessageEmbed()
-              .setTitle('Playlist loaded ')
+          const getTracksList = await getTracks(args.join(" "));
+          IsPlayingPlayList = getTracksList.length+1;
+          let getDataSong = "";
+
+          for (const song of getTracksList){
+            getDataSong = await getPreview(song.external_urls.spotify);
+            distube.play(message ,getDataSong.title+" "+getDataSong.artist);
+          }
+          message.channel.send(new MessageEmbed()
+              .setTitle('✅ Playlist loaded')
+              .setDescription(`Uploaded ${getTracksList.length+1} tracks`)
               .setColor('#ff0000')
-              .setDescription('Uploaded '+result.length+'tracks')
-              )
-            });
+            )
         }
         else {
           console.log(args.join(" "));
@@ -208,7 +236,7 @@ client.on("message", async (message) =>{
         distube.pause(message);
         distube.resume(message);
         message.channel.send(new MessageEmbed()
-              .setTitle('✅ Song resume')
+              .setTitle('✅ Song resumed')
               .setColor('#0377fc')
         )
         break;
@@ -325,124 +353,7 @@ client.on("message", async (message) =>{
         
         break;
         
-      }
-      // Time video direct time
-      case "seek":{
-        if(check_channel(message)){
-          break;
-        }
-        if(check_connection(message)){
-          break;
-        }
-        if(!args[0]) {
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET VALUE FOR A SEEK`)
-            .setColor('#ff0000')
-            .setDescription(`Music duration: ${distube.getQueue(message).songs[0].duration} sec`)
-          );
-          break;
-        }
-        if(parseInt(args[0])<0){
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET A POSITIVE VALUE`)
-            .setColor('#ff0000')
-          );
-          break;
-        }
-        let seekTime = Number(args[0]);
-        if(seekTime < distube.getQueue(message).songs[0].duration && seekTime >= 0){
-          distube.seek(message, seekTime*1000);
-        }
-        else{
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET VALUE LESS THEN MUISC DURATION FOR A SEEK`)
-            .setColor('#ff0000')
-            .setDescription(`Music duration: ${distube.getQueue(message).songs[0].duration} sec`)
-          );
-        }
-        break;
-      }
-      // Time video peremotka
-      case "forward":{
-        if(check_channel(message)){
-          break;
-        }
-        if(check_connection(message)){
-          break;
-        }
-        if(!args[0]) {
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET VALUE FOR A FORWARD`)
-            .setColor('#ff0000')
-            .setDescription(`Music duration: ${distube.getQueue(message).songs[0].duration} sec`)
-          );
-          break;
-        }
-        if(parseInt(args[0])<0){
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET A POSITIVE VALUE`)
-            .setColor('#ff0000')
-          );
-          break;
-        }
-        let queue=distube.getQueue(message);
-        let forwardTime = parseInt(queue.currentTime/1000+Number(args[0]));
-        // console.log("SONG CURRENT: "+queue.currentTime);
-        // console.log("forward:"+ forwardTime);
-        if(forwardTime < distube.getQueue(message).songs[0].duration && forwardTime >= 0){
-          distube.seek(message, forwardTime*1000);
-        }
-        else{
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET VALUE LESS THEN MUISC DURATION FOR A FORWARD`)
-            .setColor('#ff0000')
-            .setDescription(`Music duration: ${distube.getQueue(message).songs[0].duration} sec`)
-          );
-        }
-        break;
-      }
-      // Time video peremotka naoborot
-      case "rewind":{
-        if(check_channel(message)){
-          break;
-        }
-        if(check_connection(message)){
-          break;
-        }
-        if(!args[0]) {
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET VALUE FOR A REWIND`)
-            .setColor('#ff0000')
-            .setDescription(`Music duration: ${distube.getQueue(message).songs[0].duration} sec`)
-          );
-          break;
-        }
-        if(parseInt(args[0])<0){
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET A POSITIVE VALUE`)
-            .setColor('#ff0000')
-          );
-          break;
-        }
-        let queue=distube.getQueue(message);
-        let rewindTime = parseInt(queue.currentTime/1000-Number(args[0]));
-        if(rewindTime < distube.getQueue(message).songs[0].duration){
-          distube.seek(message, rewindTime*1000);
-        }
-        else if(rewindTime){
-          if(rewindTime < distube.getQueue(message).songs[0].duration){
-            distube.seek(message, 0);
-          }
-        }
-        else{
-          message.channel.send(new MessageEmbed()
-            .setTitle(`| ❌ERROR | YOU MUST SET VALUE FOR A REWIND`)
-            .setColor('#ff0000')
-            .setDescription(`Music duration: ${distube.getQueue(message).songs[0].duration} sec`)
-          );
-        }
-        break;
-      }
+      }     
 
       case "details":{
         if(check_channel(message)){
@@ -530,7 +441,6 @@ client.on("message", async (message) =>{
         break;
       }
 
-      // Aici
       // PLAYLISTS FOR USERS
       case "addlist":{
         if(!args[0]){
@@ -550,24 +460,47 @@ client.on("message", async (message) =>{
             fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
               message.reply("Music added to Playlist");
             });
+            break;
           }
+
+          else if(music.toLowerCase().includes("youtube") && music.toLowerCase().includes("playlist")){
+            message.channel.send(new MessageEmbed()
+            .setTitle(`❌ Error `)
+            .setDescription(`To copy a playlist you need to use !play and after !addqueue`)
+            .setColor('ff0000')
+          )
+          break;
+          }
+
           else if(music.toLowerCase().includes("spotify") && music.toLowerCase().includes("track")){       // COPY ONE VIDEO FROM SPOTIFY BY LINK
               getPreview(args.join(" ")).then(result=> {
                 distube.search(result.title+" "+result.artist).then(result=>{   // COPY BY WORDS
                   MusicList[user].music.push(result[0].url);
                   fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-                    console.log("Data Saved");
+                    message.reply("Music added to Playlist");
                   });
               });
             });
+            break;
+          }
+          
+
+          else if(music.toLowerCase().includes("spotify") && music.toLowerCase().includes("playlist")){
+            message.channel.send(new MessageEmbed()
+            .setTitle(`❌ Error `)
+            .setDescription(`To copy a playlist you need to use !play and after !addqueue`)
+            .setColor('ff0000')
+          )
+          break;
           }
           else{
             distube.search(args.join(" ")).then(result=>{   // COPY BY WORDS
               MusicList[user].music.push(result[0].url);
               fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-                console.log("Data Saved");
+                message.reply("Music added to Playlist");
               });
             });
+            break;
           }
         }
         else{
@@ -576,16 +509,34 @@ client.on("message", async (message) =>{
             fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
               message.reply("Music added to Playlist");
             });
+            break;
+          }
+          else if(music.toLowerCase().includes("youtube") && music.toLowerCase().includes("playlist")){
+            message.channel.send(new MessageEmbed()
+            .setTitle(`❌ Error `)
+            .setDescription(`To copy a playlist you need to use !play and after !addqueue`)
+            .setColor('ff0000')
+          )
+          break;
           }
           else if(music.toLowerCase().includes("spotify") && music.toLowerCase().includes("track")){       // COPY ONE VIDEO FROM SPOTIFY BY LINK
             getPreview(args.join(" ")).then(result=> {
               distube.search(result.title+" "+result.artist).then(result=>{   // COPY BY WORDS
                 MusicList[user] = {"music":[result[0].url]};
                 fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-                  console.log("Data Saved");
+                  message.reply("Music added to Playlist");
                 });
             });
           });
+          break;
+        }
+        else if(music.toLowerCase().includes("spotify") && music.toLowerCase().includes("playlist")){
+          message.channel.send(new MessageEmbed()
+          .setTitle(`❌ Error `)
+          .setDescription(`To copy a playlist you need to use !play and after !addqueue`)
+          .setColor('ff0000')
+        )
+        break;
         }
           else{
             distube.search(args.join(" ")).then(result=>{
@@ -607,8 +558,12 @@ client.on("message", async (message) =>{
         let MusicList = fs.readFileSync('./src/playlists.json','utf8');
         MusicList = JSON.parse(MusicList);
         let queue = distube.getQueue(message);
-        console.log("ADDQUEUE - 1");
         let i=0
+
+        if(queue.songs.length === 0) {
+          message.reply(`The queue is empty`);
+          break;
+        }
           for(i=0;i<queue.songs.length;i++){
             if(MusicList.hasOwnProperty(user)){
               if(queue.songs[i].url.toLowerCase().includes("youtube") && queue.songs[i].url.toLowerCase().includes("watch")){
@@ -631,7 +586,7 @@ client.on("message", async (message) =>{
           }
           console.log("QUEUE ADDED");
           fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-            message.reply(`Added ${i+1} songs`);
+            message.reply(`Added ${i+1} songs to playlist`);
           });
         break;
       }
@@ -662,7 +617,7 @@ client.on("message", async (message) =>{
         MusicList = JSON.parse(MusicList);
         delete MusicList[user];
         fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-          console.log("Element deleted");
+          message.reply("Playlist removed")
         });
         break;
       }
@@ -784,41 +739,77 @@ client.on("message", async (message) =>{
           );
           break;
         }
-        IsPlayingPlayList = MusicList[user].music.length;
-        for await (i of MusicList[user].music){
+        if(MusicList[user].music.length === 0){
+          message.channel.send(new MessageEmbed()
+            .setTitle(`❌ Sorry but your playlist is empty `)
+            .setColor('ff0000')
+          );
+          break;
+        }
+        IsPlayingPlayList = MusicList[user].music.length+1;
+        for (i of MusicList[user].music){
+          await sleep(500);
           distube.play(message,i);
         }
-        // for await (let i=0;i<MusicList[user].music.length;i++){
-        //   distube.play(message,MusicList[user].music[i]);
-        // }
+        message.channel.send(new MessageEmbed()
+              .setTitle('✅ Playlist loaded')
+              .setDescription(`Uploaded ${MusicList[user].music.length+1} tracks`)
+              .setColor('#ff0000')
+        );
         break;
       }
       case "help":{
         message.channel.send(new MessageEmbed()
             .setTitle(`Command List `)
             .setColor('ff0000')
-            .setDescription('`play`,`exit/stop`,`skip`,`details`,`autoplay`,`shuffle`,`repeat`,`lyrics <song title>`,\n`search`,`queue - to see queue`,`clean - to clean current queue`\n\n **To Control Aduio Player**\n\n`seek`,`forward`,`rewind`,`volume`,`pause`,`resume`\n\n**To Control And Use Your Playlist**\n\n`playlist - will play your playlist`,\n`addlist - adds to your playlist`,\n`addqueue - adds current queue to your playlist`\n`deletelist - deletes your playlist`,`deletebylist - delets from your playlist by number`\n`deletecurrent`,`addcurrent`,`showlist`')
+            .setDescription('`play`,`exit/stop`,`skip`,`details`,`autoplay`,`shuffle`,`repeat`,`lyrics <song title>`,\n`search`,`queue - to see queue`,`clean - to clean current queue`\n\n **To Control Audio Player**\n\n`volume`,`pause`,`resume`\n\n**To Control And Use Your Playlist**\n\n`playlist - will play your playlist`,\n`addlist - adds music to your playlist`,\n`addqueue - adds current queue to your playlist`\n`deletelist - deletes your playlist`,`deletebylist - delets from your playlist by number`\n`deletecurrent`,`addcurrent`,`showlist`')
           );
         break;
       }
       case "lyrics":{
         if(!args[0]) {
           message.channel.send(new MessageEmbed()
-          .setTitle(`| ❌ERROR | YOU MUST SET A VALUE FOR LYRICS`)
+          .setTitle(`| ❌ERROR | You must set a value for lyrics`)
           .setColor('#ff0000')
           );
           break;
         }
-      let MusicLyric = args.join('');
-      fetch('https://some-random-api.ml/lyrics?title='+MusicLyric)
+      let musicTitle = args.join('');
+      fetch('https://some-random-api.ml/lyrics?title='+musicTitle)
           .then(res => res.json())
           .then(json => {
             fs.writeFile("./src/LyricsTxt.txt", json.lyrics, function err(){
-              message.channel.send("Testing message.", { files: ["./src/LyricsTxt.txt"] })
+              message.channel.send(`Lyrics for ${args.join(" ")}`, { files: ["./src/LyricsTxt.txt"] })
             });
       });
       break;
       }
+
+      // Admin Commands
+      
+      case "ban": {
+        
+
+        if(member.hasPermission('ADMINISTRATOR') || member.hasPermission('BAN_MEMBERS')){
+          const target = mentions.users.first();
+          if(target){
+            const targetMember = message.guild.members.cache.get(target.id);
+            targetMember.ban();
+            message.channel.send(`User has been banned`)
+          }
+          else{
+            message.reply(`You didn't choose anyone`);
+          }
+          console.log(target);
+        }
+
+        else{
+          message.reply(`${tag} You do not have permission to use this command`);
+        }
+
+        break;
+      }
+
       case "nickname":{
         //client.user.member.setNickname("Altron");
         let target = message.mentions.users.first();
@@ -842,17 +833,12 @@ client.on("message", async (message) =>{
 
 distube
     .on("playSong", (message, queue, song) => {
-      //user = user.content.slice("@");
-      //message.channel.send(`${queue.songs.id}`);
-
-      const exampleEmbed = new MessageEmbed()
+      message.channel.send(
+        new MessageEmbed()
         .setTitle(`Now Playing`)
         .setColor('#ff0000')
         .setThumbnail(song.thumbnail)
-        .setDescription(`[${song.name}](${song.url})\n\nDuration: ${song.formattedDuration} \n\nRequested by: ${song.user}`);
-      message.channel.send(
-        exampleEmbed
-        //`>>> Playing   |-- ${song.name} --| \nDuration|-- ${song.formattedDuration} --|`
+        .setDescription(`[${song.name}](${song.url})\n\nDuration: ${song.formattedDuration} \n\nRequested by: ${song.user}`)
     )
 })
     .on('addList', (message, queue, playlist, song) =>{
