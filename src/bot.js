@@ -74,52 +74,18 @@ client.on("message", async (message) =>{
   const args = message.content.slice(prefix.length).split(" ");
   console.log("ARGS:"+args);
   const command = args.shift();
-  // console.log(command);
-  // console.log(message.channel.id);
   if(message.content[0] === prefix){
     switch(command){
       case "ping": {
         message.reply(`${client.ws.ping}ms `); break;
       }
+      
+      case "custom": {
+        let musicPlayList = ["https://www.youtube.com/watch?v=uUOMQzQdU34", "https://www.youtube.com/watch?v=W6k2j4lJ59g", "https://www.youtube.com/watch?v=psLjNy9-L_c"];
 
-      // For test
-      case "q": {
-        // Client->user
-        // console.log(message.member.id+" |IdUser| ");
-        // console.log(message.member.voice.channel.id+" |IMP| ");
-        //console.log(message.member.voice.channel);
-        // distube.search("Childhood dream").then(result => console.log(result));
-        message.channel.send("SHOVEL");
-        console.log(distube.options);
-        break;
-      }
+        console.log(musicPlayList);
 
-      case "u": {
-        let songsList = ['https://www.youtube.com/watch?v=dkpgz3uQ58U', 'https://www.youtube.com/watch?v=0F5YSRWe7FI'];
-        distube.playCustomPlaylist(message, songsList);
-        break;
-      }
-
-      case "c":{
-        const songs = ['https://www.youtube.com/watch?v=dkpgz3uQ58U', 'https://www.youtube.com/watch?v=0F5YSRWe7FI'];
-        const playlist = await distube.createCustomPlaylist(songs);
-        distube.play(message, playlist);
-        break;
-      }
-
-      case "sea":{
-        let searchResults = await distube.search(args.join(" "));
-        console.log(searchResults[0]);
-        // distube.play(message, args.join(" "));
-        break;
-      }
-
-      case "p": {
-        message.channel.send(new MessageEmbed()
-              .setTitle('Playing standard music ')
-              .setColor('#ff0000')
-        );
-        distube.play(message, "Childhood dreams Seraphine");
+        distube.playCustomPlaylist(message, musicPlayList);
         break;
       }
 
@@ -149,7 +115,7 @@ client.on("message", async (message) =>{
         }
         else if(args.join(" ").toLowerCase().includes("spotify") && args.join(" ").toLowerCase().includes("playlist")){
           const getTracksList = await getTracks(args.join(" "));
-          IsPlayingPlayList = getTracksList.length+1;
+          IsPlayingPlayList = getTracksList.length;
           let getDataSong = "";
 
           for (const song of getTracksList){
@@ -158,7 +124,7 @@ client.on("message", async (message) =>{
           }
           message.channel.send(new MessageEmbed()
               .setTitle('✅ Playlist loaded')
-              .setDescription(`Uploaded ${getTracksList.length+1} tracks`)
+              .setDescription(`Uploaded ${getTracksList.length} tracks`)
               .setColor('#ff0000')
             )
         }
@@ -395,7 +361,7 @@ client.on("message", async (message) =>{
         let result = distube.search(args.join(" ")).then(result=>{
           for(let i=0; i<5; i++){
             try{
-              searchResult = searchResult+ `${i+1}) [${result[i].name}](${result[i].url}) - Duration: ${result[i].formattedDuration} \n`;
+              searchResult = searchResult+ `${i}) [${result[i].name}](${result[i].url}) - Duration: ${result[i].formattedDuration} \n`;
               //console.log("+");
             }catch{
               searchResult = "\n";
@@ -586,7 +552,7 @@ client.on("message", async (message) =>{
           }
           console.log("QUEUE ADDED");
           fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-            message.reply(`Added ${i+1} songs to playlist`);
+            message.reply(`Added ${i} songs to playlist`);
           });
         break;
       }
@@ -702,7 +668,7 @@ client.on("message", async (message) =>{
               let result;
               for(let i=0;(i<MusicList[user].music.length && i<=10);i++){
                 result = await distube.search(MusicList[user].music[i])
-                AllMusic = AllMusic + `${i+1}) ${result[0].name} - ${result[0].url} \n`;
+                AllMusic = AllMusic + `${i}) ${result[0].name} - ${result[0].url} \n`;
               }
                 message.channel.send(new MessageEmbed()
                   .setTitle(`🆒 Your Playlist      ${MusicList[user].music.length}`)
@@ -746,14 +712,16 @@ client.on("message", async (message) =>{
           );
           break;
         }
-        IsPlayingPlayList = MusicList[user].music.length+1;
-        for (i of MusicList[user].music){
-          await sleep(500);
-          distube.play(message,i);
-        }
+        IsPlayingPlayList = MusicList[user].music.length;
+        // for (i of MusicList[user].music){
+        //   await sleep(500);
+        //   distube.play(message,i);
+        // }
+        console.log(MusicList[user].music);
+        distube.playCustomPlaylist(message, MusicList[user].music);
         message.channel.send(new MessageEmbed()
               .setTitle('✅ Playlist loaded')
-              .setDescription(`Uploaded ${MusicList[user].music.length+1} tracks`)
+              .setDescription(`Uploaded ${MusicList[user].music.length} tracks`)
               .setColor('#ff0000')
         );
         break;
@@ -781,6 +749,8 @@ client.on("message", async (message) =>{
             fs.writeFile("./src/LyricsTxt.txt", json.lyrics, function err(){
               message.channel.send(`Lyrics for ${args.join(" ")}`, { files: ["./src/LyricsTxt.txt"] })
             });
+      }).catch(error => {
+        message.channel.send('Something goes wrong X_X');
       });
       break;
       }
@@ -802,11 +772,9 @@ client.on("message", async (message) =>{
           }
           console.log(target);
         }
-
         else{
           message.reply(`${tag} You do not have permission to use this command`);
         }
-
         break;
       }
 
@@ -849,8 +817,7 @@ distube
     })
     .on("error", (message, e,song, queue) => {
       console.error(e);
-      //distube.play(message, song.name);
-      message.channel.send("An error encountered: " + e);
+      console.log("An error encountered: " + e);
     })
     .on("addSong", (message, queue, song) =>{
       if(IsPlayingPlayList!=0){
@@ -864,8 +831,6 @@ distube
           .setDescription(`[${song.name}](${song.url})\n\nDuration: ${song.formattedDuration} \n\nRequested by: ${song.user}`);
         message.channel.send(
           exampleEmbed
-          //`>>> Playing   |-- ${song.name} --| \nDuration|-- ${song.formattedDuration} --|`
         )
       }
-      //message.channel.send(`>>> Added ${song.name} \nto the queue by ${song.user}`)
 });
