@@ -713,12 +713,12 @@ client.on("message", async (message) =>{
           break;
         }
         IsPlayingPlayList = MusicList[user].music.length;
-        // for (i of MusicList[user].music){
-        //   await sleep(500);
-        //   distube.play(message,i);
-        // }
-        console.log(MusicList[user].music);
-        distube.playCustomPlaylist(message, MusicList[user].music);
+        for (i of MusicList[user].music){
+          await sleep(500);
+          distube.play(message,i);
+        }
+        // console.log(MusicList[user].music);
+        // distube.playCustomPlaylist(message, MusicList[user].music);
         message.channel.send(new MessageEmbed()
               .setTitle('✅ Playlist loaded')
               .setDescription(`Uploaded ${MusicList[user].music.length} tracks`)
