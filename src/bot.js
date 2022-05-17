@@ -23,8 +23,6 @@ const Distube = require("distube");
 
 const { getPreview, getTracks } = require("spotify-url-info")
 
-// const SpotifyPlugin = require("distube/spotify");
-
 const distube = new Distube(client);
 
 let IsPlayingPlayList = 0;
@@ -424,7 +422,7 @@ client.on("message", async (message) =>{
           if(music.toLowerCase().includes("youtube") && music.toLowerCase().includes("watch")){       // COPY ONE VIDEO FROM YOUTUBE BY LINK
             MusicList[user].music.push(music); 
             fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-              message.reply("Music added to Playlist");
+              message.reply("Music added to your playlist");
             });
             break;
           }
@@ -443,7 +441,7 @@ client.on("message", async (message) =>{
                 distube.search(result.title+" "+result.artist).then(result=>{   // COPY BY WORDS
                   MusicList[user].music.push(result[0].url);
                   fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-                    message.reply("Music added to Playlist");
+                    message.reply("Music added to your playlist");
                   });
               });
             });
@@ -463,7 +461,7 @@ client.on("message", async (message) =>{
             distube.search(args.join(" ")).then(result=>{   // COPY BY WORDS
               MusicList[user].music.push(result[0].url);
               fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-                message.reply("Music added to Playlist");
+                message.reply("Music added to your playlist");
               });
             });
             break;
@@ -473,7 +471,7 @@ client.on("message", async (message) =>{
           if(music.toLowerCase().includes("youtube") && music.toLowerCase().includes("watch")){
             MusicList[user] = {"music":[music]};
             fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-              message.reply("Music added to Playlist");
+              message.reply("Music added to your playlist");
             });
             break;
           }
@@ -490,7 +488,7 @@ client.on("message", async (message) =>{
               distube.search(result.title+" "+result.artist).then(result=>{   // COPY BY WORDS
                 MusicList[user] = {"music":[result[0].url]};
                 fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-                  message.reply("Music added to Playlist");
+                  message.reply("Music added to your playlist");
                 });
             });
           });
@@ -508,7 +506,7 @@ client.on("message", async (message) =>{
             distube.search(args.join(" ")).then(result=>{
               MusicList[user] = {"music":[result[0].url]};
               fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
-                message.reply("Music added to Playlist");
+                message.reply("Music added to your playlist");
               });
             });
           }
@@ -714,7 +712,7 @@ client.on("message", async (message) =>{
         }
         IsPlayingPlayList = MusicList[user].music.length;
         for (i of MusicList[user].music){
-          await sleep(500);
+          await sleep(750);
           distube.play(message,i);
         }
         // console.log(MusicList[user].music);
@@ -742,8 +740,9 @@ client.on("message", async (message) =>{
           );
           break;
         }
+        
       let musicTitle = args.join('');
-      fetch('https://some-random-api.ml/lyrics?title='+musicTitle)
+      await fetch('https://some-random-api.ml/lyrics?title='+musicTitle)
           .then(res => res.json())
           .then(json => {
             fs.writeFile("./src/LyricsTxt.txt", json.lyrics, function err(){
@@ -753,6 +752,28 @@ client.on("message", async (message) =>{
         message.channel.send('Something goes wrong X_X');
       });
       break;
+      }
+
+      case "slap":{
+        const url = `https://g.tenor.com/v1/search?q=slap&key=${process.env.TENORKEY}&limit=15`;
+        let response = await fetch(url);
+        let json = await response.json();
+        let index = Math.floor(Math.random() * json.results.length);
+        message.channel.send(`${tag} slapped ${!args[0] ? message.channel.members.random() : args[0]}`);
+        message.channel.send(json.results[index].url);
+        // console.log(message.channel.members);
+        break;
+      }
+
+      case "hug":{
+        const url = `https://g.tenor.com/v1/search?q=hug&key=${process.env.TENORKEY}&limit=15`;
+        let response = await fetch(url);
+        let json = await response.json();
+        let index = Math.floor(Math.random() * json.results.length);
+        message.channel.send(`${tag} hugged ${!args[0] ? message.channel.members.random() : args[0]}`);
+        message.channel.send(json.results[index].url);
+        // console.log(message.channel.members);
+        break;
       }
 
       // Admin Commands
