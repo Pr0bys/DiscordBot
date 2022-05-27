@@ -1,6 +1,5 @@
 
 const Discord = require('discord.js');
-// https://github.com/fent/node-ytdl-core/commit/d1f535712410eebd79a7468abd07d94f8c4ebe5a
 const { MessageEmbed } = require('discord.js');
 require("dotenv").config();
 
@@ -13,7 +12,7 @@ const client = new Discord.Client({
   presence:{
     status:"dnd",
     activity:{
-      name: "Music",
+      name: "Music use !help",
       type:"PLAYING"
     },
   }
@@ -25,14 +24,15 @@ const { getPreview, getTracks } = require("spotify-url-info")
 
 const distube = new Distube(client);
 
-let IsPlayingPlayList = 0;
-
 client.on("ready", () => {
   console.log(`${client.user.tag } is now online and ready to use`);  
 });
 
 client.login(process.env.BOT_TOKEN);
+
 const prefix="!";
+let IsPlayingPlayList = 0;
+
 function check_connection(message){
   if(!distube.isPaused(message)){
     if(!distube.isPlaying(message)){
@@ -63,29 +63,20 @@ function sleep(ms) {
 
 client.on("message", async (message) =>{
   if(!message.guild) return;
-  // if(message.author.bot) return;
+  if(message.author.bot) return;
 
   const {member, mentions} = message;
 
   const tag = `<@${member.id}>`;
 
   const args = message.content.slice(prefix.length).split(" ");
-  console.log("ARGS:"+args);
   const command = args.shift();
   if(message.content[0] === prefix){
     switch(command){
       case "ping": {
         message.reply(`${client.ws.ping}ms `); break;
       }
-      
-      case "custom": {
-        let musicPlayList = ["https://www.youtube.com/watch?v=uUOMQzQdU34", "https://www.youtube.com/watch?v=W6k2j4lJ59g", "https://www.youtube.com/watch?v=psLjNy9-L_c"];
 
-        console.log(musicPlayList);
-
-        distube.playCustomPlaylist(message, musicPlayList);
-        break;
-      }
 
       case "play": {
         if(check_channel(message)){
@@ -107,8 +98,9 @@ client.on("message", async (message) =>{
         }
         if(args.join(" ").toLowerCase().includes("spotify") && args.join(" ").toLowerCase().includes("track")){
           getPreview(args.join(" ")).then(result=> {
-            //console.log(result.title+" "+result.artist);
             distube.play(message, result.title+" "+result.artist);
+          }).catch(error => {
+            message.channel.send('Something goes wrong X_X');
           });
         }
         else if(args.join(" ").toLowerCase().includes("spotify") && args.join(" ").toLowerCase().includes("playlist")){
@@ -118,6 +110,7 @@ client.on("message", async (message) =>{
 
           for (const song of getTracksList){
             getDataSong = await getPreview(song.external_urls.spotify);
+            await sleep(1500);
             distube.play(message ,getDataSong.title+" "+getDataSong.artist);
           }
           message.channel.send(new MessageEmbed()
@@ -127,7 +120,6 @@ client.on("message", async (message) =>{
             )
         }
         else {
-          console.log(args.join(" "));
           distube.play(message, args.join(" "));
         }
         break;
@@ -284,7 +276,6 @@ client.on("message", async (message) =>{
         else if(args[0].toString().toLowerCase() == "1") repeatState = 1;
         else if(args[0].toString().toLowerCase() == "queue") repeatState = 2;
         else if(args[0].toString().toLowerCase() == "2") repeatState = 2;
-        console.log("repeatState = "+ repeatState);
         if(repeatState==0 || repeatState==1 || repeatState==2){
           distube.setRepeatMode(message, parseInt(repeatState));
           message.channel.send(new MessageEmbed()
@@ -328,7 +319,6 @@ client.on("message", async (message) =>{
         }
         let queue=distube.getQueue(message);
         let track = queue.songs[0];
-        //console.log(track);
         message.channel.send(new MessageEmbed()
             .setTitle(`Now Playing ${track.name}`)
             .setColor('#ff0000')
@@ -360,10 +350,8 @@ client.on("message", async (message) =>{
           for(let i=0; i<5; i++){
             try{
               searchResult = searchResult+ `${i}) [${result[i].name}](${result[i].url}) - Duration: ${result[i].formattedDuration} \n`;
-              //console.log("+");
             }catch{
               searchResult = "\n";
-              //console.log("-");
             }
           }
 
@@ -393,11 +381,7 @@ client.on("message", async (message) =>{
         if(check_connection(message)){
           break;
         }
-        let queue = distube.getQueue(message);
-        console.log(queue.songs.length);
         distube.getQueue(message).songs.length=1;
-        // distube.jump(message, queue.songs.length);
-        // distube.skip(message);
         message.channel.send(new MessageEmbed()
           .setTitle(`⏭ Queue cleaned`)
           .setColor('ff0000')
@@ -420,7 +404,8 @@ client.on("message", async (message) =>{
         MusicList = JSON.parse(MusicList);
         if(MusicList.hasOwnProperty(user)){
           if(music.toLowerCase().includes("youtube") && music.toLowerCase().includes("watch")){       // COPY ONE VIDEO FROM YOUTUBE BY LINK
-            MusicList[user].music.push(music); 
+            MusicList[user].music.push(music);
+            MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
             fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
               message.reply("Music added to your playlist");
             });
@@ -440,6 +425,7 @@ client.on("message", async (message) =>{
               getPreview(args.join(" ")).then(result=> {
                 distube.search(result.title+" "+result.artist).then(result=>{   // COPY BY WORDS
                   MusicList[user].music.push(result[0].url);
+                  MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
                   fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
                     message.reply("Music added to your playlist");
                   });
@@ -460,6 +446,7 @@ client.on("message", async (message) =>{
           else{
             distube.search(args.join(" ")).then(result=>{   // COPY BY WORDS
               MusicList[user].music.push(result[0].url);
+              MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
               fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
                 message.reply("Music added to your playlist");
               });
@@ -470,6 +457,7 @@ client.on("message", async (message) =>{
         else{
           if(music.toLowerCase().includes("youtube") && music.toLowerCase().includes("watch")){
             MusicList[user] = {"music":[music]};
+            MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
             fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
               message.reply("Music added to your playlist");
             });
@@ -487,6 +475,7 @@ client.on("message", async (message) =>{
             getPreview(args.join(" ")).then(result=> {
               distube.search(result.title+" "+result.artist).then(result=>{   // COPY BY WORDS
                 MusicList[user] = {"music":[result[0].url]};
+                MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
                 fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
                   message.reply("Music added to your playlist");
                 });
@@ -505,6 +494,7 @@ client.on("message", async (message) =>{
           else{
             distube.search(args.join(" ")).then(result=>{
               MusicList[user] = {"music":[result[0].url]};
+              MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
               fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
                 message.reply("Music added to your playlist");
               });
@@ -531,7 +521,6 @@ client.on("message", async (message) =>{
           for(i=0;i<queue.songs.length;i++){
             if(MusicList.hasOwnProperty(user)){
               if(queue.songs[i].url.toLowerCase().includes("youtube") && queue.songs[i].url.toLowerCase().includes("watch")){
-                console.log("PUSH");
                 MusicList[user].music.push(queue.songs[i].url);
               }
               else{
@@ -540,7 +529,6 @@ client.on("message", async (message) =>{
             }
             else{
               if(queue.songs[i].url.toLowerCase().includes("youtube") && queue.songs[i].url.toLowerCase().includes("watch")){
-                console.log("PUSH");
                 MusicList[user] = {"music":[queue.songs[i].url]};
               }
               else{
@@ -548,7 +536,7 @@ client.on("message", async (message) =>{
               }
             }
           }
-          console.log("QUEUE ADDED");
+          MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
           fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
             message.reply(`Added ${i} songs to playlist`);
           });
@@ -566,6 +554,7 @@ client.on("message", async (message) =>{
         else {
           MusicList[user] = {"music":[queue.songs[0].url]};
         }
+        MusicList[user].music = MusicList[user].music.length<=150 ? MusicList[user].music : MusicList[user].music.slice(Math.max(MusicList[user].music.length - 150, 0));
         fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
           message.channel.send(new MessageEmbed()
           .setTitle(`✅ Music added to your playlist `)
@@ -598,7 +587,6 @@ client.on("message", async (message) =>{
           )
         break;
         }
-        console.log("Music Select: "+musicSelect);
         if(musicSelect>=1 && musicSelect<=MusicList[user].music.length){
           MusicList[user].music.splice(musicSelect-1, 1);
           fs.writeFile("./src/playlists.json", JSON.stringify(MusicList), function err(){
@@ -636,7 +624,6 @@ client.on("message", async (message) =>{
         while(i<MusicList[user].music.length && k==0){
           if(MusicList[user].music[i] == currentSong){
             k++;
-            console.log("SHOVEL!");
           }
           i++;
         }
@@ -663,10 +650,10 @@ client.on("message", async (message) =>{
         if(MusicList.hasOwnProperty(user)){
           let AllMusic = "";
           (async () =>{
-              let result;
+
               for(let i=0;(i<MusicList[user].music.length && i<=10);i++){
-                result = await distube.search(MusicList[user].music[i])
-                AllMusic = AllMusic + `${i}) ${result[0].name} - ${result[0].url} \n`;
+
+                AllMusic = AllMusic + `${i}) ${MusicList[user].music[i]} \n`;
               }
                 message.channel.send(new MessageEmbed()
                   .setTitle(`🆒 Your Playlist      ${MusicList[user].music.length}`)
@@ -712,11 +699,9 @@ client.on("message", async (message) =>{
         }
         IsPlayingPlayList = MusicList[user].music.length;
         for (i of MusicList[user].music){
-          await sleep(750);
+          await sleep(2000);
           distube.play(message,i);
         }
-        // console.log(MusicList[user].music);
-        // distube.playCustomPlaylist(message, MusicList[user].music);
         message.channel.send(new MessageEmbed()
               .setTitle('✅ Playlist loaded')
               .setDescription(`Uploaded ${MusicList[user].music.length} tracks`)
@@ -726,9 +711,9 @@ client.on("message", async (message) =>{
       }
       case "help":{
         message.channel.send(new MessageEmbed()
-            .setTitle(`Command List `)
+            .setTitle(` List of musical commands `)
             .setColor('ff0000')
-            .setDescription('`play`,`exit/stop`,`skip`,`details`,`autoplay`,`shuffle`,`repeat`,`lyrics <song title>`,\n`search`,`queue - to see queue`,`clean - to clean current queue`\n\n **To Control Audio Player**\n\n`volume`,`pause`,`resume`\n\n**To Control And Use Your Playlist**\n\n`playlist - will play your playlist`,\n`addlist - adds music to your playlist`,\n`addqueue - adds current queue to your playlist`\n`deletelist - deletes your playlist`,`deletebylist - delets from your playlist by number`\n`deletecurrent`,`addcurrent`,`showlist`')
+            .setDescription('`play`,`exit/stop`,`skip`,`details`,`autoplay`,`shuffle`,`repeat`,`lyrics <song title>`,\n`search`,`queue - to see queue`,`clean - to clean current queue`\n\n **To Control Audio Player**\n\n`volume`,`pause`,`resume`\n\n**To Control And Use Your Playlist**\n\n`playlist - will play your playlist`,\n`addlist - adds music to your playlist`,\n`addqueue - adds current queue to your playlist`\n`deletelist - deletes your playlist`,`deletebylist - delets from your playlist by number`\n`deletecurrent`,`addcurrent`,`showlist` \n\n **Mod** \n\n `ban`,`kick`,`clear` \n\n **Fun** \n\n `hug`, `slap` \n\n **Fun** \n\n `donate`, `invitebot`')
           );
         break;
       }
@@ -761,7 +746,6 @@ client.on("message", async (message) =>{
         let index = Math.floor(Math.random() * json.results.length);
         message.channel.send(`${tag} slapped ${!args[0] ? message.channel.members.random() : args[0]}`);
         message.channel.send(json.results[index].url);
-        // console.log(message.channel.members);
         break;
       }
 
@@ -772,40 +756,157 @@ client.on("message", async (message) =>{
         let index = Math.floor(Math.random() * json.results.length);
         message.channel.send(`${tag} hugged ${!args[0] ? message.channel.members.random() : args[0]}`);
         message.channel.send(json.results[index].url);
-        // console.log(message.channel.members);
+        break;
+      }
+
+      case "roll":{
+        if(!args[0]) {
+          message.channel.send(`Dropped ${Math.floor(Math.random() * (6))}`);
+          break;
+        }
+        let maxRoll=Number(args[0]);
+        if(maxRoll>=6 && maxRoll<=999){
+          message.channel.send(`Dropped ${Math.floor(Math.random() * (maxRoll))}`);
+        }
+        else{
+          message.channel.send(new MessageEmbed()
+          .setTitle(`| ❌ERROR | You must set a valid value for roll`)
+          .setColor('#ff0000')
+          .setDescription(`The value can be equal to: 6-999`)
+          );
+        }
         break;
       }
 
       // Admin Commands
       
       case "ban": {
-        
-
         if(member.hasPermission('ADMINISTRATOR') || member.hasPermission('BAN_MEMBERS')){
           const target = mentions.users.first();
+          if(!target){
+            message.reply(`You didn't choose anyone`);
+          }
+          if (target.id === message.author.id) {
+            message.reply(
+              "You can not ban yourself!"
+            );
+            break;
+          }
+          if (target.id === message.guild.ownerID) {
+            message.channel.send("You cannot Ban The Server Owner");
+            break;
+          }
+          const targetMember = message.guild.members.cache.get(target.id);
+          if(member.id === message.guild.ownerID){
+            if(target){
+              targetMember.ban();
+              message.channel.send(`User has been banned`)
+            }
+            else{
+              message.reply(`You didn't choose anyone`);
+            }
+            break;
+          }
+          else if (targetMember.hasPermission('ADMINISTRATOR')) {
+            message.channel.send("You cannot ban the administrator");
+            break;
+          }
           if(target){
-            const targetMember = message.guild.members.cache.get(target.id);
             targetMember.ban();
             message.channel.send(`User has been banned`)
           }
           else{
             message.reply(`You didn't choose anyone`);
           }
-          console.log(target);
         }
         else{
-          message.reply(`${tag} You do not have permission to use this command`);
+          message.reply(`You do not have permission to use this command`);
         }
         break;
       }
 
-      case "nickname":{
-        //client.user.member.setNickname("Altron");
-        let target = message.mentions.users.first();
-        let member = message.guild.members.cache.get(target.id);
-        args.shift();
-        let nickName = args.join(' ');
-        member.setNickname(nickName);
+      case "kick": {
+        if(member.hasPermission('ADMINISTRATOR') || member.hasPermission('KICK_MEMBERS')){
+          const target = mentions.users.first();
+          if(!target){
+            message.reply(`You didn't choose anyone`);
+          }
+          if (target.id === message.author.id) {
+            message.reply(
+              "You can not kick yourself!"
+            );
+            break;
+          }
+          if (target.id === message.guild.ownerID) {
+            message.channel.send("You cannot kick The Server Owner");
+            break;
+          }
+          const targetMember = message.guild.members.cache.get(target.id);
+          if(member.id === message.guild.ownerID){
+            if(target){
+              targetMember.kick();
+              message.channel.send(`User has been kicked`)
+            }
+            break;
+          }
+          else if (targetMember.hasPermission('ADMINISTRATOR')) {
+            message.channel.send("You cannot kick the administrator");
+            break;
+          }
+          if(target){
+            targetMember.kick();
+            message.channel.send(`User has been kicked`)
+          }
+        }
+        else{
+          message.reply(`You do not have permission to use this command`);
+        }
+        break;
+      }
+
+      case "clear": {
+        if(member.hasPermission('ADMINISTRATOR') || member.hasPermission('MANAGE_MESSAGES')){
+          if(!args[0]) {
+            message.channel.bulkDelete(5).then(messages => console.log(`Bulk deleted ${messages.size} messages`))
+          .catch(console.error);
+            break;
+          }
+          let countMess=Number(args[0]);
+          if(countMess>=1 && countMess<=50){
+            message.channel.bulkDelete(countMess+1).then(messages => console.log(`Bulk deleted ${messages.size} messages`))
+          .catch(console.error);
+          }
+          else{
+            message.channel.send(new MessageEmbed()
+            .setTitle(`| ❌ERROR | You must set a valid value for clear`)
+            .setColor('#ff0000')
+            .setDescription(`The value can be equal to: 1-50`)
+            );
+          }
+        }
+        else {
+          message.reply(`You do not have permission to use this command`);
+        }
+        
+        break;
+      }
+
+      case "donate": {
+        message.channel.send(new MessageEmbed()
+          .setTitle(`If you want to support me`)
+          .setColor('#FFA500')
+          .setURL("https://www.donationalerts.com/r/nyaqu")
+          );
+        break;
+      }
+
+      case "invitebot": {
+        message.channel.send(new MessageEmbed()
+          .setTitle(`Link to invite me`)
+          .setColor('#FFA500')
+          .setDescription('https://discord.com/api/oauth2/authorize?client_id=899249004259459122&permissions=8&scope=bot')
+          .setURL("https://discord.com/api/oauth2/authorize?client_id=899249004259459122&permissions=8&scope=bot")
+          );
         break;
       }
 
