@@ -713,7 +713,7 @@ client.on("message", async (message) =>{
         message.channel.send(new MessageEmbed()
             .setTitle(` List of musical commands `)
             .setColor('ff0000')
-            .setDescription('`play`,`exit/stop`,`skip`,`details`,`autoplay`,`shuffle`,`repeat`,`lyrics <song title>`,\n`search`,`queue - to see queue`,`clean - to clean current queue`\n\n **To Control Audio Player**\n\n`volume`,`pause`,`resume`\n\n**To Control And Use Your Playlist**\n\n`playlist - will play your playlist`,\n`addlist - adds music to your playlist`,\n`addqueue - adds current queue to your playlist`\n`deletelist - deletes your playlist`,`deletebylist - delets from your playlist by number`\n`deletecurrent`,`addcurrent`,`showlist` \n\n **Mod** \n\n `ban`,`kick`,`clear` \n\n **Fun** \n\n `hug`, `slap` \n\n **Fun** \n\n `donate`, `invitebot`')
+            .setDescription('`play`,`exit/stop`,`skip`,`details`,`autoplay`,`shuffle`,`repeat`,`lyrics <song title>`,\n`search`,`queue - to see queue`,`clean - to clean current queue`\n\n **To Control Audio Player**\n\n`volume`,`pause`,`resume`\n\n**To Control And Use Your Playlist**\n\n`playlist - will play your playlist`,\n`addlist - adds music to your playlist`,\n`addqueue - adds current queue to your playlist`\n`deletelist - deletes your playlist`,`deletebylist - delets from your playlist by number`\n`deletecurrent`,`addcurrent`,`showlist` \n\n **Mod** \n\n `ban`,`kick`,`clear` \n\n **Fun** \n\n `hug`, `slap, roll` \n\n **Additional** \n\n `donate`, `invitebot`')
           );
         break;
       }
